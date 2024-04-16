@@ -4,12 +4,12 @@ from pathlib import Path
 import typer
 
 from todo import (
-    DB_WRITE_ERROR, DIRECTORY_ERROR, FILE_ERROR, SUCCESS, __app_name__
+    DB_READ_ERROR, DB_WRITE_ERROR, DIRECTORY_ERROR, FILE_ERROR, SUCCESS, __app_name__
 )
 
-CONFIG_DIR_PATH = Path(typer.get_app_dir(__app_name__))
-CONFIG_FILE_PATH = CONFIG_DIR_PATH / "config.json"
-DEFAULT_DB_FILE_PATH = CONFIG_DIR_PATH / "datastore_todo.json"
+APP_WORKING_DIRRECTORY = Path(typer.get_app_dir(__app_name__))
+CONFIG_FILE_PATH = APP_WORKING_DIRRECTORY / "config.json"
+DEFAULT_DB_FILE_PATH = APP_WORKING_DIRRECTORY / "datastore_todo.json"
 
 def init_app(db_path: str) -> int:
     """Initialize the application."""
@@ -26,7 +26,7 @@ def init_app(db_path: str) -> int:
 
 def _init_config_file() -> int:
     try:
-        CONFIG_DIR_PATH.mkdir(exist_ok=True)
+        APP_WORKING_DIRRECTORY.mkdir(exist_ok=True)
     except OSError:
         return DIRECTORY_ERROR
     try:
@@ -56,11 +56,14 @@ def _create_json_datastore(json_datastore_path: str) -> int:
         return DB_WRITE_ERROR
     return SUCCESS
 
-# def get_database_path(config_file: Path) -> Path:
-#     """Return the current path to the to-do database."""
-#     config_parser = configparser.ConfigParser()
-#     config_parser.read(config_file)
-#     return Path(config_parser["General"]["database"])
+def get_database_path(config_file: Path) -> Path:
+    """Return the current path to the to-do database."""
+    try:
+        with open(CONFIG_FILE_PATH, "r") as json_file:
+            config_json = json.load(json_file)
+    except OSError:
+        return DB_READ_ERROR
+    return config_json['json_datastore']
 
 def init_database(db_path: Path) -> int:
     """Create the to-do database."""

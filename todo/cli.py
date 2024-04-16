@@ -45,3 +45,11 @@ def init(db_path: str = typer.Option(
         raise typer.Exit(1)
     else:
         typer.secho(f"The to-do database location is: '{db_path}' ", fg=typer.colors.GREEN)
+
+
+
+
+
+
+
+        
