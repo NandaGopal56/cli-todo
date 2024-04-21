@@ -2,7 +2,6 @@ from typing import Optional, List
 import typer
 from todo import __app_name__, __version__, config, ERRORS, model
 from pathlib import Path
-import os
 
 app = typer.Typer()
     
@@ -54,25 +53,6 @@ def init(db_path: str = typer.Option(
         typer.secho(f"The to-do database location is: '{db_path}' ", fg=typer.colors.GREEN)
 
 
-def get_to_manager() -> model.TodoManager:
-    if config.CONFIG_FILE_PATH.exists():
-        db_path = config.get_database_path()
-    else:
-        typer.secho(
-            'Config file not found. Please, run "todo init"',
-            fg=typer.colors.RED,
-        )
-        raise typer.Exit(1)
-    if os.path.exists(db_path):
-        # todo: make this dynamic as per config file
-        storage_type = model.JSONStorage()
-        return model.TodoManager(storage_type)
-    else:
-        typer.secho(
-            'Database not found. Please, run "rptodo init"',
-            fg=typer.colors.RED,
-        )
-        raise typer.Exit(1)
 
 #todo: fix id auto increment while printing but not in storage layer
 def print_formatted_todo_in_cli(todos: List[model.TodoItem]) -> None:
@@ -86,8 +66,8 @@ def print_formatted_todo_in_cli(todos: List[model.TodoItem]) -> None:
     headers = "".join(columns)
     typer.secho(headers, fg=typer.colors.BLUE, bold=True)
     typer.secho("-" * len(headers), fg=typer.colors.BLUE)
-    for id, todo in enumerate(todos, 1):
-        desc, priority, done = todo.description, todo.priority.name, todo.status.name
+    for todo in todos:
+        id, desc, priority, done = todo.id, todo.description, todo.priority.name, todo.status.name
         typer.secho(
             f"{id}{(len(columns[0]) - len(str(id))) * ' '}"
             f"| ({priority}){(len(columns[1]) - len(str(priority)) - 4) * ' '}"
@@ -105,7 +85,7 @@ def add(
     status: model.Status = typer.Option(model.Status.pending, "--status", "-s", help="Status (pending, completed)")
 ) -> None:
     """Add a new to-do with a DESCRIPTION."""
-    todoer = get_to_manager()
+    todoer = model.get_todo_manager()
     todo_item, status = todoer.create_todo(description, priority, status)
     if status != 0:
         typer.secho(
@@ -118,7 +98,7 @@ def add(
 
 @app.command(name='list')
 def list_all_todos() -> None:
-    todo_manager = get_to_manager()
+    todo_manager = model.get_todo_manager()
     todos = todo_manager.list_todos()
 
     if len(todos) == 0:

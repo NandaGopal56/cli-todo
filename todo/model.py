@@ -4,8 +4,9 @@ from typing import Any, Dict, List, NamedTuple, Optional, Literal
 from todo import DB_READ_ERROR, DB_WRITE_ERROR, JSON_ERROR, SUCCESS
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field
-from todo.config import get_database_path
+from todo import config
 from enum import Enum
+import typer, os
 
 class Priority(str, Enum):
     high = 'high'
@@ -16,8 +17,13 @@ class Status(str, Enum):
     completed = 'completed'
     pending = 'pending'
 
+
+
+    
+
 class TodoItem(BaseModel):
-    id: Optional[int] = Field(default_factory=int)
+    #todo: test the roper id creatin with no duplicate id creation at all
+    id: Optional[int] = Field(default_factory=lambda: max(todo.id for todo in get_todo_manager().list_todos()) + 1)
     description: str
     priority: Priority
     status: Status
@@ -50,7 +56,7 @@ class StorageInterface(ABC):
 class JSONStorage(StorageInterface):
 
     def __init__(self):
-        self.filename = get_database_path()
+        self.filename = config.get_database_path()
         try:
             with open(self.filename, 'r') as file:
                 self.data = json.load(file)
@@ -154,3 +160,24 @@ class TodoManager:
 
     def list_todos(self) -> List[TodoItem]:
         return self.storage.list_todos()
+    
+
+def get_todo_manager() -> TodoManager:
+    if config.CONFIG_FILE_PATH.exists():
+        db_path = config.get_database_path()
+    else:
+        typer.secho(
+            'Config file not found. Please, run "todo init"',
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(1)
+    if os.path.exists(db_path):
+        # todo: make this dynamic as per config file
+        storage_type = JSONStorage()
+        return TodoManager(storage_type)
+    else:
+        typer.secho(
+            'Database not found. Please, run "rptodo init"',
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(1)
