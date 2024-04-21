@@ -48,8 +48,22 @@ def init(db_path: str = typer.Option(
 
 
 
+# def get_todoer() -> rptodo.Todoer:
+#     if config.CONFIG_FILE_PATH.exists():
+#         db_path = config.get_database_path(config.CONFIG_FILE_PATH)
+#     else:
+#         typer.secho(
+#             'Config file not found. Please, run "todo init"',
+#             fg=typer.colors.RED,
+#         )
+#         raise typer.Exit(1)
+#     if db_path.exists():
+#         return rptodo.Todoer(db_path)
+#     else:
+#         typer.secho(
+#             'Database not found. Please, run "rptodo init"',
+#             fg=typer.colors.RED,
+#         )
+#         raise typer.Exit(1)
 
 
-
-
-        

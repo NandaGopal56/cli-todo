@@ -1,0 +1,147 @@
+from typing import Any, Dict, NamedTuple
+import json
+from pathlib import Path
+from typing import Any, Dict, List, NamedTuple, Optional
+from todo import DB_READ_ERROR, DB_WRITE_ERROR, JSON_ERROR, SUCCESS
+from abc import ABC, abstractmethod
+from pydantic import BaseModel, Field
+from todo.config import get_database_path
+
+class TodoItem(BaseModel):
+    id: Optional[int] = Field(default_factory=int)
+    title: str
+    description: str
+    priority: str
+    status: str
+
+# Abstract DataStore interface
+class StorageInterface(ABC):
+    
+    @abstractmethod
+    def create_todo(self, todo: TodoItem) -> TodoItem:
+        pass
+
+    @abstractmethod
+    def get_todo_by_id(self, todo_id: int) -> TodoItem:
+        pass
+
+    @abstractmethod
+    def update_todo(self, todo: TodoItem) -> TodoItem:
+        pass
+
+    @abstractmethod
+    def delete_todo(self, todo_id: int) -> None:
+        pass
+
+    @abstractmethod
+    def list_todos(self) -> List[TodoItem]:
+        pass
+
+
+
+class JSONStorage(StorageInterface):
+
+    def __init__(self):
+        self.filename = get_database_path()
+        try:
+            with open(self.filename, 'r') as file:
+                self.data = json.load(file)
+        except FileNotFoundError:
+            self.data = []
+
+    def _save_data(self):
+        with open(self.filename, 'w') as file:
+            json.dump(self.data, file)
+
+    def create_todo(self, todo: TodoItem) -> TodoItem:
+        todo_dict = todo.model_dump()
+        self.data.append(todo_dict)
+        self._save_data()
+        return TodoItem(**todo_dict)
+
+    def get_todo_by_id(self, todo_id: int) -> TodoItem:
+        for todo in self.data:
+            if todo['id'] == todo_id:
+                return TodoItem(**todo)
+        raise ValueError(f"Todo with id {todo_id} not found")
+
+    def update_todo(self, todo: TodoItem) -> TodoItem:
+        for index, stored_todo in enumerate(self.data):
+            if stored_todo['id'] == todo.id:
+                self.data[index] = todo.model_dump()
+                self._save_data()
+                return todo
+        raise ValueError(f"Todo with id {todo.id} not found")
+
+    def delete_todo(self, todo_id: int) -> None:
+        self.data = [todo for todo in self.data if todo['id'] != todo_id]
+        self._save_data()
+
+    def list_todos(self) -> List[TodoItem]:
+        return [TodoItem(**todo) for todo in self.data]
+        
+
+
+class InMemoryStorage(StorageInterface):
+
+    def __init__(self):
+        self.data = []
+
+    def create_todo(self, todo: TodoItem) -> TodoItem:
+        todo.id = len(self.data) + 1
+        self.data.append(todo)
+        return todo
+
+    def get_todo_by_id(self, todo_id: int) -> TodoItem:
+        for todo in self.data:
+            if todo.id == todo_id:
+                return todo
+        raise ValueError(f"Todo with id {todo_id} not found")
+
+    def update_todo(self, todo: TodoItem) -> TodoItem:
+        for index, stored_todo in enumerate(self.data):
+            if stored_todo.id == todo.id:
+                self.data[index] = todo
+                return todo
+        raise ValueError(f"Todo with id {todo.id} not found")
+
+    def delete_todo(self, todo_id: int) -> None:
+        self.data = [todo for todo in self.data if todo.id != todo_id]
+
+    def list_todos(self) -> List[TodoItem]:
+        return self.data
+
+
+
+
+class TodoManager:
+
+    def __init__(self, storage):
+        self.storage = storage
+
+    def create_todo(self, title: str, description: str, priority: str, status: str) -> TodoItem:
+        todo = TodoItem(title=title, description=description, priority=priority, status=status)
+        return self.storage.create_todo(todo)
+
+    def get_todo_by_id(self, todo_id: int) -> TodoItem:
+        return self.storage.get_todo_by_id(todo_id)
+
+    def update_todo(self, todo_id: int, title: str = None, description: str = None, priority: str = None, status: str = None) -> TodoItem:
+        todo = self.get_todo_by_id(todo_id)
+        
+        if title:
+            todo.title = title
+        if description:
+            todo.description = description
+        if priority:
+            todo.priority = priority
+        if status:
+            todo.status = status
+        
+        return self.storage.update_todo(todo)
+
+    def delete_todo(self, todo_id: int) -> None:
+        return self.storage.delete_todo(todo_id)
+
+    def list_todos(self) -> List[TodoItem]:
+        return self.storage.list_todos()

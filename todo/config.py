@@ -56,7 +56,7 @@ def _create_json_datastore(json_datastore_path: str) -> int:
         return DB_WRITE_ERROR
     return SUCCESS
 
-def get_database_path(config_file: Path) -> Path:
+def get_database_path() -> Path:
     """Return the current path to the to-do database."""
     try:
         with open(CONFIG_FILE_PATH, "r") as json_file:
