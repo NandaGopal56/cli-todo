@@ -9,7 +9,7 @@ from todo import (
 
 APP_WORKING_DIRRECTORY = Path(typer.get_app_dir(__app_name__))
 CONFIG_FILE_PATH = APP_WORKING_DIRRECTORY / "config.json"
-DEFAULT_DB_FILE_PATH = APP_WORKING_DIRRECTORY / "datastore_todo.json"
+DEFAULT_DB_FILE_PATH = APP_WORKING_DIRRECTORY / "todos.json"
 
 def init_app(db_path: str) -> int:
     """Initialize the application."""

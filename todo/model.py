@@ -1,18 +1,28 @@
-from typing import Any, Dict, NamedTuple
 import json
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Literal
 from todo import DB_READ_ERROR, DB_WRITE_ERROR, JSON_ERROR, SUCCESS
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 from todo.config import get_database_path
+from enum import Enum
+
+class Priority(str, Enum):
+    high = 'high'
+    medium = 'medium'
+    low = 'low'
+
+class Status(str, Enum):
+    completed = 'completed'
+    pending = 'pending'
 
 class TodoItem(BaseModel):
     id: Optional[int] = Field(default_factory=int)
     title: str
     description: str
-    priority: str
-    status: str
+    priority: Priority
+    status: Status
 
 # Abstract DataStore interface
 class StorageInterface(ABC):
