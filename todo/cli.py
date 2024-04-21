@@ -54,7 +54,6 @@ def init(db_path: str = typer.Option(
         typer.secho(f"The to-do database location is: '{db_path}' ", fg=typer.colors.GREEN)
 
 
-
 def get_to_manager() -> model.TodoManager:
     if config.CONFIG_FILE_PATH.exists():
         db_path = config.get_database_path()
@@ -74,39 +73,10 @@ def get_to_manager() -> model.TodoManager:
             fg=typer.colors.RED,
         )
         raise typer.Exit(1)
-    
 
-@app.command(name='add')
-def add(
-    description: str,
-    priority: model.Priority = typer.Option(model.Priority.low, "--priority", "-p", help="Priority level (low, medium, high)"),
-    status: model.Status = typer.Option(model.Status.pending, "--status", "-s", help="Status (pending, completed)")
-) -> None:
-    """Add a new to-do with a DESCRIPTION."""
-    todoer = get_to_manager()
-    todo_item, status = todoer.create_todo(description, priority, status)
-    if status != 0:
-        typer.secho(
-            f'Adding to-do failed with "{status}"', fg=typer.colors.RED
-        )
-        raise typer.Exit(1)
-    else:
-        typer.secho(
-            f'to-do: "{todo_item.description}" was added \nPiority: {todo_item.priority.name} \nStatus: {todo_item.status.name}',
-            fg=typer.colors.GREEN
-        )
-
-@app.command(name='list')
-def list_all_todos() -> None:
-    todo_manager = get_to_manager()
-    todos = todo_manager.list_todos()
-
-    if len(todos) == 0:
-        typer.secho(
-            "There are no tasks in the to-do list yet", fg=typer.colors.RED
-        )
-        raise typer.Exit()
-    typer.secho("\nto-do list:\n", fg=typer.colors.BLUE, bold=True)
+#todo: fix id auto increment while printing but not in storage layer
+def print_formatted_todo_in_cli(todos: List[model.TodoItem]) -> None:
+    """Print the To-do item in formatted tabular format in terminal"""
     columns = (
         "ID.  ",
         "| Priority  ",
@@ -126,5 +96,37 @@ def list_all_todos() -> None:
             fg=typer.colors.BLUE,
         )
     typer.secho("-" * len(headers) + "\n", fg=typer.colors.BLUE)
+
+
+@app.command(name='add')
+def add(
+    description: str,
+    priority: model.Priority = typer.Option(model.Priority.low, "--priority", "-p", help="Priority level (low, medium, high)"),
+    status: model.Status = typer.Option(model.Status.pending, "--status", "-s", help="Status (pending, completed)")
+) -> None:
+    """Add a new to-do with a DESCRIPTION."""
+    todoer = get_to_manager()
+    todo_item, status = todoer.create_todo(description, priority, status)
+    if status != 0:
+        typer.secho(
+            f'Adding to-do failed with "{status}"', fg=typer.colors.RED
+        )
+        raise typer.Exit(1)
+    else:
+        typer.secho("\nBelow to-do was added :\n", fg=typer.colors.BLUE, bold=True)
+        print_formatted_todo_in_cli([todo_item])
+
+@app.command(name='list')
+def list_all_todos() -> None:
+    todo_manager = get_to_manager()
+    todos = todo_manager.list_todos()
+
+    if len(todos) == 0:
+        typer.secho(
+            "There are no tasks in the to-do list yet", fg=typer.colors.RED
+        )
+        raise typer.Exit()
+    typer.secho("\nto-do list:\n", fg=typer.colors.BLUE, bold=True)
+    print_formatted_todo_in_cli(todos)
 
 
