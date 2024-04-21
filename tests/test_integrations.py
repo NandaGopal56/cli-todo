@@ -12,10 +12,12 @@ def json_manager(tmp_path):
     storage = JSONStorage()
     return TodoManager(storage)
 
-
+#todo: create separate storage file for testing or find the best practice
 def test_integration_create_and_get_todo_in_memory(in_memory_manager, json_manager):
     for manager in [in_memory_manager, json_manager]:
-        created_todo = manager.create_todo("Test", "Test Description", "high", "pending")
+        created_todo, status = manager.create_todo("Test Description", "low", "pending")
+
+        assert status == 0
         retrieved_todo = manager.get_todo_by_id(created_todo.id)
         
         assert retrieved_todo == created_todo
@@ -31,4 +33,5 @@ def test_integration_delete_todo_in_memory(in_memory_manager, json_manager):
         
         assert str(exc_info.value) == f"Todo with id {0} not found"
 
-    
+
+

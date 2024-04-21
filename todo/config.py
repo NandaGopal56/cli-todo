@@ -11,6 +11,9 @@ APP_WORKING_DIRRECTORY = Path(typer.get_app_dir(__app_name__))
 CONFIG_FILE_PATH = APP_WORKING_DIRRECTORY / "config.json"
 DEFAULT_DB_FILE_PATH = APP_WORKING_DIRRECTORY / "todos.json"
 
+# TEST_CONFIG_FILE_PATH = APP_WORKING_DIRRECTORY / "test_config.json"
+# TEST_DEFAULT_DB_FILE_PATH = APP_WORKING_DIRRECTORY / "test_todos.json"
+
 def init_app(db_path: str) -> int:
     """Initialize the application."""
     config_code = _init_config_file()
@@ -32,7 +35,7 @@ def _init_config_file() -> int:
     try:
         CONFIG_FILE_PATH.touch(exist_ok=True)
         with open(CONFIG_FILE_PATH, "w") as json_file:
-            json.dump({'app': __app_name__}, json_file)
+            json.dump({'app': __app_name__, 'storage_type': 'json'}, json_file)
     except OSError:
         return FILE_ERROR
     return SUCCESS

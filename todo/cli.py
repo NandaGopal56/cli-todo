@@ -1,22 +1,29 @@
-from typing import Optional
+from typing import Optional, List
 import typer
-from todo import __app_name__, __version__, config, ERRORS
+from todo import __app_name__, __version__, config, ERRORS, model
 from pathlib import Path
+import os
 
 app = typer.Typer()
-
-def _version_callback(value: bool) -> None:
+    
+def version_callback(value: bool) -> None:
     if value:
         typer.echo(f"{__app_name__} v{__version__}")
-        raise typer.Exit(0)
+        raise typer.Exit()
+
+def author_callback(value: bool) -> None:
+    if value:
+        typer.echo("Author: Nanda Gopal Pattanayk")
+        raise typer.Exit()
     
 @app.callback()
 def main(
-    version: Optional[bool] = typer.Option(
-        None, "--version", '-v', help='Show the ap version no. & exit', callback=_version_callback, is_eager=True
-    )
+    version: bool = typer.Option(None, "--version", "-v", help="Show version", callback=version_callback, is_eager=True),
+    author: bool = typer.Option(None, "--author", "-a", help="Show author", callback=author_callback, is_eager=True),
 ) -> None:
-    return
+    pass
+
+
 
 
 @app.command()
@@ -48,22 +55,76 @@ def init(db_path: str = typer.Option(
 
 
 
-# def get_todoer() -> rptodo.Todoer:
-#     if config.CONFIG_FILE_PATH.exists():
-#         db_path = config.get_database_path(config.CONFIG_FILE_PATH)
-#     else:
-#         typer.secho(
-#             'Config file not found. Please, run "todo init"',
-#             fg=typer.colors.RED,
-#         )
-#         raise typer.Exit(1)
-#     if db_path.exists():
-#         return rptodo.Todoer(db_path)
-#     else:
-#         typer.secho(
-#             'Database not found. Please, run "rptodo init"',
-#             fg=typer.colors.RED,
-#         )
-#         raise typer.Exit(1)
+def get_to_manager() -> model.TodoManager:
+    if config.CONFIG_FILE_PATH.exists():
+        db_path = config.get_database_path()
+    else:
+        typer.secho(
+            'Config file not found. Please, run "todo init"',
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(1)
+    if os.path.exists(db_path):
+        # todo: make this dynamic as per config file
+        storage_type = model.JSONStorage()
+        return model.TodoManager(storage_type)
+    else:
+        typer.secho(
+            'Database not found. Please, run "rptodo init"',
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(1)
+    
+
+@app.command(name='add')
+def add(
+    description: str,
+    priority: model.Priority = typer.Option(model.Priority.low, "--priority", "-p", help="Priority level (low, medium, high)"),
+    status: model.Status = typer.Option(model.Status.pending, "--status", "-s", help="Status (pending, completed)")
+) -> None:
+    """Add a new to-do with a DESCRIPTION."""
+    todoer = get_to_manager()
+    todo_item, status = todoer.create_todo(description, priority, status)
+    if status != 0:
+        typer.secho(
+            f'Adding to-do failed with "{status}"', fg=typer.colors.RED
+        )
+        raise typer.Exit(1)
+    else:
+        typer.secho(
+            f'to-do: "{todo_item.description}" was added \nPiority: {todo_item.priority.name} \nStatus: {todo_item.status.name}',
+            fg=typer.colors.GREEN
+        )
+
+@app.command(name='list')
+def list_all_todos() -> None:
+    todo_manager = get_to_manager()
+    todos = todo_manager.list_todos()
+
+    if len(todos) == 0:
+        typer.secho(
+            "There are no tasks in the to-do list yet", fg=typer.colors.RED
+        )
+        raise typer.Exit()
+    typer.secho("\nto-do list:\n", fg=typer.colors.BLUE, bold=True)
+    columns = (
+        "ID.  ",
+        "| Priority  ",
+        "| Status  ",
+        "| Description  ",
+    )
+    headers = "".join(columns)
+    typer.secho(headers, fg=typer.colors.BLUE, bold=True)
+    typer.secho("-" * len(headers), fg=typer.colors.BLUE)
+    for id, todo in enumerate(todos, 1):
+        desc, priority, done = todo.description, todo.priority.name, todo.status.name
+        typer.secho(
+            f"{id}{(len(columns[0]) - len(str(id))) * ' '}"
+            f"| ({priority}){(len(columns[1]) - len(str(priority)) - 4) * ' '}"
+            f"| {done}{(len(columns[2]) - len(str(done)) - 2) * ' '}"
+            f"| {desc}",
+            fg=typer.colors.BLUE,
+        )
+    typer.secho("-" * len(headers) + "\n", fg=typer.colors.BLUE)
 
 

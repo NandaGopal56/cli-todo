@@ -4,7 +4,6 @@ from typing import Any, Dict, List, NamedTuple, Optional, Literal
 from todo import DB_READ_ERROR, DB_WRITE_ERROR, JSON_ERROR, SUCCESS
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated
 from todo.config import get_database_path
 from enum import Enum
 
@@ -19,7 +18,6 @@ class Status(str, Enum):
 
 class TodoItem(BaseModel):
     id: Optional[int] = Field(default_factory=int)
-    title: str
     description: str
     priority: Priority
     status: Status
@@ -64,10 +62,13 @@ class JSONStorage(StorageInterface):
             json.dump(self.data, file)
 
     def create_todo(self, todo: TodoItem) -> TodoItem:
-        todo_dict = todo.model_dump()
-        self.data.append(todo_dict)
-        self._save_data()
-        return TodoItem(**todo_dict)
+        try:
+            todo_dict = todo.model_dump()
+            self.data.append(todo_dict)
+            self._save_data()
+            return TodoItem(**todo_dict), SUCCESS
+        except Exception as e:
+            return None, DB_WRITE_ERROR
 
     def get_todo_by_id(self, todo_id: int) -> TodoItem:
         for todo in self.data:
@@ -91,16 +92,18 @@ class JSONStorage(StorageInterface):
         return [TodoItem(**todo) for todo in self.data]
         
 
-
 class InMemoryStorage(StorageInterface):
 
     def __init__(self):
         self.data = []
 
     def create_todo(self, todo: TodoItem) -> TodoItem:
-        todo.id = len(self.data) + 1
-        self.data.append(todo)
-        return todo
+        try:
+            todo.id = len(self.data) + 1
+            self.data.append(todo)
+            return todo, SUCCESS
+        except Exception as e:
+            return None, DB_WRITE_ERROR
 
     def get_todo_by_id(self, todo_id: int) -> TodoItem:
         for todo in self.data:
@@ -122,25 +125,21 @@ class InMemoryStorage(StorageInterface):
         return self.data
 
 
-
-
 class TodoManager:
 
     def __init__(self, storage):
         self.storage = storage
 
-    def create_todo(self, title: str, description: str, priority: str, status: str) -> TodoItem:
-        todo = TodoItem(title=title, description=description, priority=priority, status=status)
+    def create_todo(self, description: str, priority: str, status: str) -> TodoItem:
+        todo = TodoItem(description=description, priority=priority, status=status)
         return self.storage.create_todo(todo)
 
     def get_todo_by_id(self, todo_id: int) -> TodoItem:
         return self.storage.get_todo_by_id(todo_id)
 
-    def update_todo(self, todo_id: int, title: str = None, description: str = None, priority: str = None, status: str = None) -> TodoItem:
+    def update_todo(self, todo_id: int, description: str = None, priority: str = None, status: str = None) -> TodoItem:
         todo = self.get_todo_by_id(todo_id)
-        
-        if title:
-            todo.title = title
+    
         if description:
             todo.description = description
         if priority:
