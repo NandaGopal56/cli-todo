@@ -17,13 +17,9 @@ class Status(str, Enum):
     completed = 'completed'
     pending = 'pending'
 
-
-
-    
-
 class TodoItem(BaseModel):
     #todo: test the roper id creatin with no duplicate id creation at all
-    id: Optional[int] = Field(default_factory=lambda: max(todo.id for todo in get_todo_manager().list_todos()) + 1)
+    id: Optional[int] = Field(default_factory=lambda: max((todo.id for todo in get_todo_manager().list_todos()), default=0) + 1)
     description: str
     priority: Priority
     status: Status
