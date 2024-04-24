@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import List
 import typer
 from todo import __app_name__, __version__, config, ERRORS, model
 from pathlib import Path

@@ -1,7 +1,6 @@
 import json
-from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Literal
-from todo import DB_READ_ERROR, DB_WRITE_ERROR, JSON_ERROR, SUCCESS
+from typing import List, Optional
+from todo import DB_WRITE_ERROR, SUCCESS
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field
 from todo import config
@@ -131,14 +130,14 @@ class TodoManager:
     def __init__(self, storage):
         self.storage = storage
 
-    def create_todo(self, description: str, priority: str, status: str) -> TodoItem:
+    def create_todo(self, description: str, priority: Priority, status: Status) -> TodoItem:
         todo = TodoItem(description=description, priority=priority, status=status)
         return self.storage.create_todo(todo)
 
     def get_todo_by_id(self, todo_id: int) -> TodoItem:
         return self.storage.get_todo_by_id(todo_id)
 
-    def update_todo(self, todo_id: int, description: str = None, priority: str = None, status: str = None) -> TodoItem:
+    def update_todo(self, todo_id: int, description: str = None, priority: Priority = None, status: Status = None) -> TodoItem:
         todo = self.get_todo_by_id(todo_id)
     
         if description:
