@@ -7,12 +7,11 @@ def in_memory_manager():
     return TodoManager(storage)
 
 @pytest.fixture
-def json_manager(tmp_path):
-    # filename = tmp_path / "test.json"
+def json_manager():
     storage = JSONStorage()
     return TodoManager(storage)
 
-#todo: create separate storage file for testing or find the best practice
+
 def test_integration_create_and_get_todo_in_memory(in_memory_manager, json_manager):
     for manager in [in_memory_manager, json_manager]:
         created_todo, status = manager.create_todo("Test Description", "low", "pending")

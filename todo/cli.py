@@ -24,14 +24,14 @@ def main(
 
 
 
+
 @app.command()
-def init(db_path: str = typer.Option(
-        str(config.DEFAULT_DB_FILE_PATH),
-        "--db-path",
-        "-db"
-    )) -> None:
+def init(
+        db_path: str = typer.Option(str(config.DEFAULT_DB_FILE_PATH), "--db-path", "-db"),
+        storage: config.StorageTypes = typer.Option(config.StorageTypes.json, "--storage", "-s", help="Storage types (json, in_memory)")
+    ) -> None:
     """Initialize the to-do database."""
-    app_init_error = config.init_app(db_path)
+    app_init_error = config.init_app(db_path, storage)
 
     if app_init_error:
         typer.secho(

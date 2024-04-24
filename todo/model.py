@@ -18,7 +18,6 @@ class Status(str, Enum):
     pending = 'pending'
 
 class TodoItem(BaseModel):
-    #todo: test the roper id creatin with no duplicate id creation at all
     id: Optional[int] = Field(default_factory=lambda: max((todo.id for todo in get_todo_manager().list_todos()), default=0) + 1)
     description: str
     priority: Priority
@@ -52,7 +51,7 @@ class StorageInterface(ABC):
 class JSONStorage(StorageInterface):
 
     def __init__(self):
-        self.filename = config.get_database_path()
+        _, self.filename = config.get_database_path()
         try:
             with open(self.filename, 'r') as file:
                 self.data = json.load(file)
@@ -160,7 +159,7 @@ class TodoManager:
 
 def get_todo_manager() -> TodoManager:
     if config.CONFIG_FILE_PATH.exists():
-        db_path = config.get_database_path()
+        storage_type, db_path = config.get_database_path()
     else:
         typer.secho(
             'Config file not found. Please, run "todo init"',
@@ -168,8 +167,11 @@ def get_todo_manager() -> TodoManager:
         )
         raise typer.Exit(1)
     if os.path.exists(db_path):
-        # todo: make this dynamic as per config file
-        storage_type = JSONStorage()
+        if storage_type == config.StorageTypes.in_memory.name:
+            storage_type = InMemoryStorage()
+        else:
+            storage_type = JSONStorage()
+
         return TodoManager(storage_type)
     else:
         typer.secho(
