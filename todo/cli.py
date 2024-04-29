@@ -1,6 +1,6 @@
 from typing import List
 import typer
-from todo import __app_name__, __version__, config, ERRORS, model
+from todo import __app_name__, __version__, __author__, config, ERRORS, model
 from pathlib import Path
 
 app = typer.Typer()
@@ -12,7 +12,7 @@ def version_callback(value: bool) -> None:
 
 def author_callback(value: bool) -> None:
     if value:
-        typer.echo("Author: Nanda Gopal Pattanayk")
+        typer.echo(f"Author: {__author__}")
         raise typer.Exit()
     
 @app.callback()
@@ -139,7 +139,7 @@ def remove(
             e, fg=typer.colors.RED
         )
         raise typer.Exit()
-    
+   
 
 @app.command(name='update')
 def update(

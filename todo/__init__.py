@@ -1,5 +1,6 @@
 __app_name__ = "cli-todo"
 __version__ = "0.0.1"
+__author__ = 'Nanda Gopal Pattanayak'
 
 (
     SUCCESS,
